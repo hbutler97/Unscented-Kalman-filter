@@ -19,7 +19,7 @@ UKF::UKF(){
 
   n_x_ = 5;
   n_aug_ = 7;
-  lambda_ = 3 - n_x_;
+  lambda_ = 3 - n_aug_;
 
   // initial state vector
   x_ = VectorXd(n_x_);
@@ -131,6 +131,14 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
         x_(1) = ro     * sin(phi);
       }
 
+      // set weights
+      double weight_0 = lambda_/(lambda_+n_aug_);
+      weights_(0) = weight_0;
+      for (int i=1; i<2*n_aug_+1; i++) {  //2n+1 weights
+        double weight = 0.5/(n_aug_+lambda_);
+        weights_(i) = weight;
+      }
+
       // done initializing, no need to predict or update
       is_initialized_ = true;
 
@@ -161,14 +169,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     
 
 void UKF::PredictMeanAndCovariance(void) {
-  // set weights
-  double weight_0 = lambda_/(lambda_+n_aug_);
-  weights_(0) = weight_0;
-  for (int i=1; i<2*n_aug_+1; i++) {  //2n+1 weights
-    double weight = 0.5/(n_aug_+lambda_);
-    weights_(i) = weight;
-  }
-
+ 
   //predicted state mean
   x_.fill(0.0);
   for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //iterate over sigma points
@@ -282,7 +283,7 @@ void UKF::GenerateAugSigmaPoints(void){
   for(int i = 0; i < n_aug_; i++)
   {
     Xsig_aug_.col(i+1) = x_aug_ + sqrt(lambda_ + n_aug_) * L.col(i);
-    Xsig_aug_.col(i+1+n_x_) = x_aug_ - sqrt(lambda_ + n_aug_) * L.col(i);
+    Xsig_aug_.col(i+1+n_aug_) = x_aug_ - sqrt(lambda_ + n_aug_) * L.col(i);
   }
 
    std::cout << "GenerateAugSigmaPoints" << std::endl;
@@ -296,7 +297,7 @@ void UKF::GenerateAugSigmaPoints(void){
  * measurement and this one.
  */
 void UKF::Prediction(double delta_t) {
-  GenerateSigmaPoints();
+  //  GenerateSigmaPoints();
   GenerateAugSigmaPoints();
   PredictSigmaPoints(delta_t);
   PredictMeanAndCovariance();
